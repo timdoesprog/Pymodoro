@@ -3,8 +3,9 @@
 
 
 import tkinter
+from tkinter import messagebox
 
-DEFAULT_TIME = 60 * 25
+DEFAULT_TIME = 25 * 60
 
 
 class Pymodoro:
@@ -14,14 +15,18 @@ class Pymodoro:
         self.mainframe.pack(fill=tkinter.BOTH, expand=True)
 
         self.timer_text = tkinter.StringVar()
+        self.timer_text.trace('w', self.build_timer)
         self.time_left = tkinter.IntVar()
         self.time_left.set(DEFAULT_TIME)
+        self.time_left.trace('w', self.alert)
         self.running = False
 
         self.build_grid()
         self.build_banner()
         self.build_buttons()
         self.build_timer()
+
+        self.update()
 
     def build_grid(self):
         self.mainframe.columnconfigure(0, weight=1)
@@ -71,7 +76,7 @@ class Pymodoro:
         self.stop_button.grid(row=0, column=1, sticky='ew')
         self.stop_button.config(state=tkinter.DISABLED)
 
-    def build_timer(self):
+    def build_timer(self, *args):
         timer = tkinter.Label(
             self.mainframe,
             text=self.timer_text.get(),
@@ -89,6 +94,30 @@ class Pymodoro:
         self.running = False
         self.stop_button.config(state=tkinter.DISABLED)
         self.start_button.config(state=tkinter.NORMAL)
+
+    def alert(self, *args):
+        if not self.time_left.get():
+            messagebox.showinfo('You did it!')
+
+    def minutes_seconds(self, seconds):
+        return int(seconds / 60), int(seconds % 60)
+
+    def update(self):
+        time_left = self.time_left.get()
+
+        if self.running and time_left:
+            minutes, seconds = self.minutes_seconds(time_left)
+            self.timer_text.set(
+                '{:0>2}:{:0>2}'.format(minutes, seconds)
+            )
+            self.time_left.set(time_left - 1)
+        else:
+            minutes, seconds = self.minutes_seconds(DEFAULT_TIME)
+            self.timer_text.set(
+                '{:0>2}:{:0>2}'.format(minutes, seconds)
+            )
+            self.stop_timer()
+        self.master.after(1000, self.update)
 
 
 if __name__ == '__main__':
